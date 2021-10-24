@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["englishid"] = [{"text":"impl Freeze for <a class=\"struct\" href=\"englishid/struct.EnglishId.html\" title=\"struct englishid::EnglishId\">EnglishId</a>","synthetic":true,"types":["englishid::EnglishId"]},{"text":"impl Freeze for <a class=\"enum\" href=\"englishid/enum.Error.html\" title=\"enum englishid::Error\">Error</a>","synthetic":true,"types":["englishid::Error"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
