@@ -1,0 +1,15 @@
+[package]
+name = "englishid"
+version = "0.1.0"
+edition = "2021"
+description = "English formatting for unsigned integer IDs"
+repository = "https://github.com/khonsulabs/englishid"
+license = "MIT OR Apache-2.0"
+keywords = ["wordlist"]
+categories = ["value-formatting"]
+readme = "./README.md"
+homepage = "https://github.com/khonsulabs/englishid"
+
+[dependencies]
+once_cell = "1"
+thiserror = "1"
