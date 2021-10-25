@@ -2,9 +2,10 @@
 <p><img src="https://img.shields.io/badge/unsafe-forbid-success" alt="englishid forbids unsafe code" />
 <a href="https://crates.io/crates/englishid"><img src="https://img.shields.io/crates/v/englishid.svg" alt="crate version" /></a>
 <a href="https://github.com/khonsulabs/englishid/actions?query=workflow:Tests"><img src="https://img.shields.io/github/workflow/status/khonsulabs/englishid/Tests/main" alt="Live Build Status" /></a>
-<a href="https://englishid.dev/main/englishid/"><img src="https://img.shields.io/badge/docs-main-informational" alt="Documentation for main branch" /></a></p>
+<a href="https://khonsulabs.github.io/englishid/main/englishid/"><img src="https://img.shields.io/badge/docs-main-informational" alt="Documentation for main branch" /></a></p>
 <p>English formatting for unsigned integers. Useful for encoding large IDs in a
-human-readable and recognizable format.</p>
+human-readable and recognizable format. Uses a list of <a href="https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases">words compiled by the
+EFF</a>.</p>
 <h2 id="basic-usage" class="section-header"><a href="#basic-usage">Basic Usage</a></h2>
 <p>Generating an ID can be done from any primitive unsigned integer type:</p>
 
@@ -17,16 +18,16 @@ human-readable and recognizable format.</p>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let</span> <span class="ident">parsed</span> <span class="op">=</span> <span class="ident">englishid::parse_u16</span>(<span class="string">&quot;acting-abacus&quot;</span>).<span class="ident">unwrap</span>();
 <span class="macro">assert_eq!</span>(<span class="ident">parsed</span>, <span class="number">42</span>);</code></pre></div>
 <h2 id="restricting-word-length" class="section-header"><a href="#restricting-word-length">Restricting word-length</a></h2>
-<p>The <a href="static.EFF_WORD_LIST.html">wordlist</a> used can encode 51 bits of information in 4
-words. If you’d prefer to restrict your u64 IDs to 51 bits, you can set the
-number of words used:</p>
+<p>The <a href="https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases">wordlist</a> used can encode 51 bits of information in 4 words. If
+you’d prefer to restrict your u64 IDs to 51 bits, you can set the number of
+words used:</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">englishid</span>::{<span class="ident">EnglishId</span>};
 
 <span class="kw">let</span> <span class="ident">english_id</span> <span class="op">=</span> <span class="ident">EnglishId::from</span>(<span class="number">123456789_u64</span>).<span class="ident">words</span>(<span class="number">4</span>).<span class="ident">to_string</span>().<span class="ident">unwrap</span>();
 <span class="macro">assert_eq!</span>(<span class="ident">english_id</span>, <span class="string">&quot;quantum-ashamed-abdominal-abacus&quot;</span>);</code></pre></div>
-<p>If a value is ever out of acceptable ranges, <a href="enum.Error.html#variant.ValueOutOfRange" title="Error::ValueOutOfRange"><code>Error::ValueOutOfRange</code></a> will
-be returned.</p>
+<p>If a value is ever out of acceptable ranges, <code>Error::ValueOutOfRange</code> will be
+returned.</p>
 </div></details><h2 id="structs" class="section-header"><a href="#structs">Structs</a></h2>
 <div class="item-table"><div class="item-left module-item"><a class="struct" href="struct.EnglishId.html" title="englishid::EnglishId struct">EnglishId</a></div><div class="item-right docblock-short"><p>An ID that can be converted to a set of “safe” words.</p>
 </div></div><h2 id="enums" class="section-header"><a href="#enums">Enums</a></h2>
