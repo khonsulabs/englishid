@@ -18,11 +18,11 @@ use std::{
 };
 
 use once_cell::sync::Lazy;
-pub use wordlist::EFF_WORD_LIST;
+pub use wordlist::WORD_LIST;
 
 static WORDLIST_LOOKUP: Lazy<BTreeMap<&'static str, usize>> = Lazy::new(|| {
     let mut words = BTreeMap::new();
-    for (index, word) in EFF_WORD_LIST.into_iter().enumerate() {
+    for (index, word) in WORD_LIST.into_iter().enumerate() {
         words.insert(word, index);
     }
     words
@@ -75,9 +75,9 @@ impl Iterator for EnglishId {
     fn next(&mut self) -> Option<Self::Item> {
         if self.words > 0 {
             self.words -= 1;
-            let word_index = self.value.modulo(EFF_WORD_LIST.len());
-            self.value /= EFF_WORD_LIST.len();
-            Some(EFF_WORD_LIST[word_index])
+            let word_index = self.value.modulo(WORD_LIST.len());
+            self.value /= WORD_LIST.len();
+            Some(WORD_LIST[word_index])
         } else {
             None
         }
@@ -91,9 +91,9 @@ impl Display for EnglishId {
             if idx > 0 {
                 f.write_char('-')?;
             }
-            let word_index = id.value.modulo(EFF_WORD_LIST.len());
-            id.value /= EFF_WORD_LIST.len();
-            f.write_str(EFF_WORD_LIST[word_index])?;
+            let word_index = id.value.modulo(WORD_LIST.len());
+            id.value /= WORD_LIST.len();
+            f.write_str(WORD_LIST[word_index])?;
         }
 
         Ok(())
@@ -114,6 +114,231 @@ pub enum Error {
     /// A word not inside of the word list was encountered.
     #[error("an unknown word was encountered")]
     UnknownWord(String),
+    /// The data was too long to be encoded. The maximum number of bytes
+    /// currently able to be encoded is 7,775.
+    #[error("data too long")]
+    DataTooLong,
+}
+
+#[derive(Eq, PartialEq, Debug, Copy, Clone)]
+enum EncodeHeader {
+    None,
+    Length,
+    Value(u16),
+}
+
+/// Encodes `data` using `englishid` with enough information to be able to be
+/// decoded without additional information. To decode, use the [`decode()`]
+/// function.
+///
+/// # Errors
+///
+/// - [`Error::DataTooLong`]: Returned if `data` is longer than 8,190 bytes.
+pub fn encode(data: &[u8]) -> Result<String, Error> {
+    internal_encode(data, EncodeHeader::Length)
+}
+
+/// Encodes `data` using `englishid`, for situations where the decoder knows the
+/// expected length of `data`. To decode, use the [`decode_fixed_length()`]
+/// function.
+#[allow(clippy::missing_panics_doc)] // The only error that internal_encode returns can't be triggered from this flow
+#[must_use]
+pub fn encode_fixed_length(data: &[u8]) -> String {
+    internal_encode(data, EncodeHeader::None).unwrap()
+}
+
+/// Encodes `data` using `englishid`, encoding `header` at the start. To decode, use the [`decode_with_custom_header()`]
+/// function.
+///
+/// # Errors
+///
+/// - [`Error::DataTooLong`]: Returned if `data` is longer than 8,190 bytes.
+pub fn encode_with_custom_header(data: &[u8], header: u16) -> Result<String, Error> {
+    internal_encode(data, EncodeHeader::Value(header))
+}
+
+fn internal_encode(mut data: &[u8], header: EncodeHeader) -> Result<String, Error> {
+    let mut words = Vec::new();
+    let header_value = match header {
+        EncodeHeader::None => None,
+        EncodeHeader::Length => Some(data.len()),
+        EncodeHeader::Value(value) => Some(value as usize),
+    };
+
+    if let Some(header_value) = header_value {
+        if header_value >= WORD_LIST.len() - 1 {
+            // We're reserving the last word to act as a sentinel value to allow
+            // encoding multiple values. I can't imagine this library being used to
+            // encode values larger than 32 or 64 bytes, so I would be shocked if we
+            // ever expanded the ability here.
+            return Err(Error::DataTooLong);
+        }
+
+        words.push(WORD_LIST[header_value]);
+    }
+
+    let max_word = 2_u32.pow(13);
+
+    let mut accumulated_value = 0_u32;
+    let mut accumulated_bits = 0_usize;
+    while !data.is_empty() || accumulated_bits > 0 {
+        // Load bytes into accumulated_value if we can't perform our division
+        // and modulus safely.
+        while !data.is_empty() && accumulated_bits < 13 {
+            accumulated_value <<= 8;
+            accumulated_value |= u32::from(data[0]);
+            accumulated_bits += 8;
+            data = &data[1..];
+        }
+        let leftover_bits = accumulated_bits.saturating_sub(13);
+        let mut word_index = accumulated_value >> leftover_bits & (max_word - 1);
+
+        accumulated_value = if leftover_bits > 0 {
+            accumulated_value & (u32::MAX >> (32 - leftover_bits))
+        } else {
+            0
+        };
+        if data.is_empty() && leftover_bits == 0 {
+            word_index <<= 13 - accumulated_bits;
+        }
+        words.push(WORD_LIST[word_index as usize]);
+        accumulated_bits = leftover_bits;
+    }
+    Ok(words.join("-"))
+}
+
+enum DecodeMode {
+    FixedLength(usize),
+    LengthHeader,
+    ValueHeader(Box<dyn FnOnce(u16) -> usize>),
+}
+
+/// Decodes `englishid` that was previously encoded using
+/// [`encode_fixed_length()`]., expecting an output size of `length`.
+///
+/// # Errors
+///
+/// - `Error::EmptyInput`: `englishid` was empty.
+/// - `Error::UnknownWord`: An unrecognized word was encountered.
+pub fn decode_fixed_length(englishid: &str, length: usize) -> Result<Vec<u8>, Error> {
+    internal_decode(englishid, DecodeMode::FixedLength(length))
+}
+
+/// Decodes `englishid` that was previously encoded using [`encode()`].
+///
+/// # Errors
+///
+/// - `Error::EmptyInput`: `englishid` was empty.
+/// - `Error::UnknownWord`: An unrecognized word was encountered.
+pub fn decode(englishid: &str) -> Result<Vec<u8>, Error> {
+    internal_decode(englishid, DecodeMode::LengthHeader)
+}
+
+/// Decodes `englishid` that was previously encoded using
+/// [`encode_with_custom_header()`]. After parsing the embedded header,
+/// `callback` is invoked with the value. The callback is responsible for
+/// returning the number of bytes the result is expected to contain.
+///
+/// # Errors
+///
+/// - `Error::EmptyInput`: `englishid` was empty.
+/// - `Error::UnknownWord`: An unrecognized word was encountered.
+pub fn decode_with_custom_header<F: FnOnce(u16) -> usize + 'static>(
+    englishid: &str,
+    callback: F,
+) -> Result<Vec<u8>, Error> {
+    internal_decode(englishid, DecodeMode::ValueHeader(Box::new(callback)))
+}
+
+#[allow(clippy::cast_possible_truncation)]
+fn internal_decode(englishid: &str, header: DecodeMode) -> Result<Vec<u8>, Error> {
+    let mut words = englishid.split('-');
+    let length = match header {
+        DecodeMode::FixedLength(length) => length,
+        DecodeMode::LengthHeader => {
+            let length_word = words.next().ok_or(Error::EmptyInput)?;
+            *WORDLIST_LOOKUP
+                .get(length_word)
+                .ok_or_else(|| Error::UnknownWord(length_word.to_string()))?
+        }
+        DecodeMode::ValueHeader(callback) => {
+            let value_word = words.next().ok_or(Error::EmptyInput)?;
+            let value = *WORDLIST_LOOKUP
+                .get(value_word)
+                .ok_or_else(|| Error::UnknownWord(value_word.to_string()))?;
+            callback(value as u16)
+        }
+    };
+
+    let mut output = Vec::with_capacity(length);
+
+    let mut accumulated_value = 0_u32;
+    let mut accumulated_bits = 0_usize;
+
+    for word in words {
+        accumulated_value <<= 13;
+        accumulated_value |= *WORDLIST_LOOKUP
+            .get(word)
+            .ok_or_else(|| Error::UnknownWord(word.to_string()))?
+            as u32;
+        accumulated_bits += 13;
+
+        while accumulated_bits > 8 {
+            let leftover_bits = accumulated_bits.saturating_sub(8);
+            output.push((accumulated_value >> leftover_bits) as u8);
+            accumulated_value = if leftover_bits > 0 {
+                accumulated_value & (u32::MAX >> (32 - leftover_bits))
+            } else {
+                0
+            };
+            accumulated_bits = leftover_bits;
+        }
+    }
+
+    if accumulated_bits > 0 {
+        output.push((accumulated_value << (13 - accumulated_bits)) as u8);
+    }
+
+    output.resize(length, 0);
+
+    Ok(output)
+}
+
+#[test]
+fn encode_test() {
+    const BUFFER: &[u8; 13] = b"Hello, world!";
+
+    for length in 1..BUFFER.len() {
+        let test_slice = &BUFFER[0..length];
+        let encoded = encode_fixed_length(test_slice);
+        let decoded = decode_fixed_length(&encoded, length).unwrap();
+        assert_eq!(decoded, test_slice);
+    }
+}
+
+#[test]
+fn encode_with_length_test() {
+    const BUFFER: &[u8; 13] = b"Hello, world!";
+
+    for length in 1..BUFFER.len() {
+        let test_slice = &BUFFER[0..length];
+        let encoded = encode(test_slice).unwrap();
+        let decoded = decode(&encoded).unwrap();
+        assert_eq!(decoded, test_slice);
+    }
+}
+
+#[test]
+#[allow(clippy::cast_possible_truncation)]
+fn encode_with_custom_header_test() {
+    const BUFFER: &[u8; 13] = b"Hello, world!";
+
+    for length in 1..BUFFER.len() {
+        let test_slice = &BUFFER[0..length];
+        let encoded = encode_with_custom_header(test_slice, (length as u16) << 1).unwrap();
+        let decoded = decode_with_custom_header(&encoded, |header| header as usize >> 1).unwrap();
+        assert_eq!(decoded, test_slice);
+    }
 }
 
 /// Parses a previously-encoded [`EnglishId`].
@@ -144,7 +369,7 @@ macro_rules! impl_parse {
             let words = englishid.split('-').collect::<Vec<_>>();
             for (index, word) in words.into_iter().rev().enumerate() {
                 if index > 0 {
-                    if let Some(new_value) = value.checked_mul(EFF_WORD_LIST.len() as $primitive) {
+                    if let Some(new_value) = value.checked_mul(WORD_LIST.len() as $primitive) {
                         value = new_value;
                     } else {
                         return Err(Error::ValueOutOfRange);
@@ -280,7 +505,7 @@ impl From<u128> for EnglishId {
 }
 
 #[test]
-fn tests() {
+fn numeric_roundtrip_tests() {
     assert_eq!(
         parse_u8(&EnglishId::from(0_u8).to_string().unwrap()).unwrap(),
         0
@@ -313,8 +538,12 @@ fn tests() {
         parse_u128(&EnglishId::from(u128::MAX).to_string().unwrap()).unwrap(),
         u128::MAX
     );
+}
+
+#[test]
+fn numeric_out_of_range_tests() {
     assert!(matches!(
-        parse_u8(EFF_WORD_LIST[256]),
+        parse_u8(WORD_LIST[256]),
         Err(Error::ValueOutOfRange)
     ));
     assert!(matches!(
@@ -345,6 +574,38 @@ fn tests() {
         parse_u128("zoom-zoom-zoom-zoom-zoom-zoom-zoom-zoom-zoom-zoom"),
         Err(Error::ValueOutOfRange)
     ));
+}
+
+#[test]
+fn numeric_restricted_words_test() {
+    // Test storing 26 bits of data in 2 words
+    assert_eq!(
+        parse_u32(
+            &EnglishId::from(2_u32.pow(26) - 1)
+                .words(2)
+                .to_string()
+                .unwrap()
+        )
+        .unwrap(),
+        0x3ff_ffff
+    );
+
+    assert!(matches!(
+        EnglishId::from(2_u32.pow(26)).words(2).to_string(),
+        Err(Error::ValueOutOfRange)
+    ));
+
+    // Test storing 52 bits of data in 4 words
+    assert_eq!(
+        parse_u64(
+            &EnglishId::from(2_u64.pow(52) - 1)
+                .words(4)
+                .to_string()
+                .unwrap()
+        )
+        .unwrap(),
+        0xf_ffff_ffff_ffff
+    );
 
     assert!(matches!(
         EnglishId::from(2_u64.pow(52)).words(4).to_string(),
