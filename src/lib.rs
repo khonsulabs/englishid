@@ -612,3 +612,18 @@ fn numeric_restricted_words_test() {
         Err(Error::ValueOutOfRange)
     ));
 }
+
+#[test]
+fn validate_wordlist() {
+    for word in &crate::wordlist::WORD_LIST {
+        dbg!(word);
+        // Should be all lower-case
+        assert_eq!(word, &word.to_lowercase());
+        // Hyphens in words breaks splitting during parsing
+        assert!(!word.contains("-"));
+        // Words shouldn't contain spaces
+        assert!(!word.contains(" "));
+        // Should be no duplicates
+        assert_eq!(crate::wordlist::WORD_LIST.iter().filter(|x| x == &word).count(), 1);
+    }
+}
