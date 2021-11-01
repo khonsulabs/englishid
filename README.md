@@ -114,9 +114,23 @@ When using the automatic length header or a custom header, the value in the
 header cannot be larger than 8190. This limit may be removed in the future, but
 this crate is not intended for large payload encoding.
 
+## Version stability
+
+The maintainers of this crate will treat changes to the wordlist as breaking
+changes in the eyes of semantic versioning. In the future, this crate [may
+support](https://github.com/khonsulabs/englishid/issues/2) additional wordlists
+which will provide another mechanism to releasing wordlist updates, which should
+be infrequent.
+
+If an issue is discovered that generated data that was unable to be recovered
+into its original form, fixes will be shipped on minor releases and versions
+that can generate invalid data will be yanked.
+
 ## Open-source Licenses
 
-This project, like all projects from [Khonsu Labs](https://khonsulabs.com/), are open-source. This repository is available under the [MIT License](./LICENSE-MIT) or the [Apache License 2.0](./LICENSE-APACHE).
+This project, like all projects from [Khonsu Labs](https://khonsulabs.com/), are
+open-source. This repository is available under the [MIT License](./LICENSE-MIT)
+or the [Apache License 2.0](./LICENSE-APACHE).
 
 [wordlist]: https://github.com/khonsulabs/englishid/blob/main/src/wordlist.rs
 [effwordlist]: https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases

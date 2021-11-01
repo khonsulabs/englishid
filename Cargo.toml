@@ -1,6 +1,6 @@
 [package]
 name = "englishid"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "English formatting for unsigned integer IDs"
 repository = "https://github.com/khonsulabs/englishid"
