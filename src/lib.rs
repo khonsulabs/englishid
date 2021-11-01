@@ -112,7 +112,7 @@ pub enum Error {
     #[error("value out of range")]
     ValueOutOfRange,
     /// A word not inside of the word list was encountered.
-    #[error("an unknown word was encountered")]
+    #[error("an unknown word '{0}' was encountered")]
     UnknownWord(String),
     /// The data was too long to be encoded. The maximum number of bytes
     /// currently able to be encoded is 7,775.
@@ -611,4 +611,25 @@ fn numeric_restricted_words_test() {
         EnglishId::from(2_u64.pow(52)).words(4).to_string(),
         Err(Error::ValueOutOfRange)
     ));
+}
+
+#[test]
+fn validate_wordlist() {
+    for word in &crate::wordlist::WORD_LIST {
+        dbg!(word);
+        // Should be all lower-case
+        assert_eq!(word, &word.to_lowercase());
+        // Hyphens in words breaks splitting during parsing
+        assert!(!word.contains("-"));
+        // Words shouldn't contain spaces
+        assert!(!word.contains(" "));
+        // Should be no duplicates
+        assert_eq!(
+            crate::wordlist::WORD_LIST
+                .iter()
+                .filter(|x| x == &word)
+                .count(),
+            1
+        );
+    }
 }
