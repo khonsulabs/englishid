@@ -112,7 +112,7 @@ pub enum Error {
     #[error("value out of range")]
     ValueOutOfRange,
     /// A word not inside of the word list was encountered.
-    #[error("an unknown word was encountered")]
+    #[error("an unknown word '{0}' was encountered")]
     UnknownWord(String),
     /// The data was too long to be encoded. The maximum number of bytes
     /// currently able to be encoded is 7,775.
