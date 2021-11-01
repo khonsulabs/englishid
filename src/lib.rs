@@ -624,6 +624,12 @@ fn validate_wordlist() {
         // Words shouldn't contain spaces
         assert!(!word.contains(" "));
         // Should be no duplicates
-        assert_eq!(crate::wordlist::WORD_LIST.iter().filter(|x| x == &word).count(), 1);
+        assert_eq!(
+            crate::wordlist::WORD_LIST
+                .iter()
+                .filter(|x| x == &word)
+                .count(),
+            1
+        );
     }
 }
