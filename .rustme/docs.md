@@ -1,5 +1,3 @@
-# englishid
-
 English formatting for unsigned integer IDs and arbitrary data.
 
 ![englishid forbids unsafe code](https://img.shields.io/badge/unsafe-forbid-success)
@@ -130,11 +128,3 @@ that can generate invalid data will be yanked.
 
 [wordlist]: https://github.com/khonsulabs/englishid/blob/main/src/wordlist.rs
 [effwordlist]: https://www.eff.org/deeplinks/2016/07/new-wordlists-random-passphrases
-
-## Open-source Licenses
-
-This project, like all projects from [Khonsu Labs](https://khonsulabs.com/), are
-open-source. This repository is available under the [MIT License](./LICENSE-MIT)
-or the [Apache License 2.0](./LICENSE-APACHE).
-
-To learn more about contributing, please see [CONTRIBUTING.md](./CONTRIBUTING.md).

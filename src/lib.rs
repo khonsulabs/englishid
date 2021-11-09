@@ -1,4 +1,4 @@
-#![doc = include_str!("../README.md")]
+#![doc = include_str!("../.rustme/docs.md")]
 #![forbid(unsafe_code)]
 #![warn(
     clippy::cargo,
@@ -622,7 +622,7 @@ fn validate_wordlist() {
         // Hyphens in words breaks splitting during parsing
         assert!(!word.contains("-"));
         // Words shouldn't contain spaces
-        assert!(!word.contains(" "));
+        assert!(!word.contains(' '));
         // Should be no duplicates
         assert_eq!(
             crate::wordlist::WORD_LIST
