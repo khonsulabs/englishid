@@ -620,7 +620,7 @@ fn validate_wordlist() {
         // Should be all lower-case
         assert_eq!(word, &word.to_lowercase());
         // Hyphens in words breaks splitting during parsing
-        assert!(!word.contains("-"));
+        assert!(!word.contains('-'));
         // Words shouldn't contain spaces
         assert!(!word.contains(' '));
         // Should be no duplicates
