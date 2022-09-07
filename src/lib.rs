@@ -22,7 +22,7 @@ pub use wordlist::WORD_LIST;
 
 static WORDLIST_LOOKUP: Lazy<BTreeMap<&'static str, usize>> = Lazy::new(|| {
     let mut words = BTreeMap::new();
-    for (index, word) in WORD_LIST.into_iter().enumerate() {
+    for (index, &word) in WORD_LIST.iter().enumerate() {
         words.insert(word, index);
     }
     words
