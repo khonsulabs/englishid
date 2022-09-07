@@ -410,11 +410,11 @@ impl Unsigned {
     #[must_use]
     pub const fn modulo(self, other: usize) -> usize {
         match self {
-            Unsigned::U8(value) => value as usize % other,
-            Unsigned::U16(value) => value as usize % other,
-            Unsigned::U32(value) => value as usize % other,
-            Unsigned::U64(value) => (value % other as u64) as usize,
-            Unsigned::U128(value) => (value % other as u128) as usize,
+            Self::U8(value) => value as usize % other,
+            Self::U16(value) => value as usize % other,
+            Self::U32(value) => value as usize % other,
+            Self::U64(value) => (value % other as u64) as usize,
+            Self::U128(value) => (value % other as u128) as usize,
         }
     }
 
@@ -422,11 +422,11 @@ impl Unsigned {
     #[must_use]
     pub const fn is_zero(self) -> bool {
         match self {
-            Unsigned::U8(value) => value == 0,
-            Unsigned::U16(value) => value == 0,
-            Unsigned::U32(value) => value == 0,
-            Unsigned::U64(value) => value == 0,
-            Unsigned::U128(value) => value == 0,
+            Self::U8(value) => value == 0,
+            Self::U16(value) => value == 0,
+            Self::U32(value) => value == 0,
+            Self::U64(value) => value == 0,
+            Self::U128(value) => value == 0,
         }
     }
 }
@@ -434,11 +434,11 @@ impl Unsigned {
 impl std::ops::DivAssign<usize> for Unsigned {
     fn div_assign(&mut self, rhs: usize) {
         match self {
-            Unsigned::U8(value) => *value /= u8::try_from(rhs).unwrap_or(u8::MAX),
-            Unsigned::U16(value) => *value /= u16::try_from(rhs).unwrap_or(u16::MAX),
-            Unsigned::U32(value) => *value /= u32::try_from(rhs).unwrap_or(u32::MAX),
-            Unsigned::U64(value) => *value /= u64::try_from(rhs).unwrap_or(u64::MAX),
-            Unsigned::U128(value) => *value /= u128::try_from(rhs).unwrap_or(u128::MAX),
+            Self::U8(value) => *value /= u8::try_from(rhs).unwrap_or(u8::MAX),
+            Self::U16(value) => *value /= u16::try_from(rhs).unwrap_or(u16::MAX),
+            Self::U32(value) => *value /= u32::try_from(rhs).unwrap_or(u32::MAX),
+            Self::U64(value) => *value /= u64::try_from(rhs).unwrap_or(u64::MAX),
+            Self::U128(value) => *value /= u128::try_from(rhs).unwrap_or(u128::MAX),
         }
     }
 }
